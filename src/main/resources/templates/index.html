@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <title>Demo</title>
+    <meta name="description" content=""/>
+    <meta name="viewport" content="width=device-width"/>
+    <base href="/"/>
+    <link rel="stylesheet" type="text/css" href="/webjars/bootstrap/css/bootstrap.min.css"/>
+    <!--
+    <script type="text/javascript" src="/webjars/jquery/jquery.min.js"></script>
+    -->
+    <script type="text/javascript" src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.1.js"
+            integrity="sha256-3zlB5s2uwoUzrXK3BT7AX3FyvojsraNFxCc2vC/7pNI=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="/webjars/js-cookie/js.cookie.js"></script>
+</head>
+<body>
+<h1>Demo</h1>
+<div class="container">
+    <div class="container unauthenticated">
+        With GitHub: <a href="/oauth2/authorization/github">click here</a>
+    </div>
+
+    <div class="container unauthenticated">
+        With Kakao: <a href="/oauth2/authorization/kakao">click here</a>
+    </div>
+    <div class="container authenticated">
+        Logged in as: <span id="user"></span>
+        <div>
+            <button onClick="logout()" class="btn btn-primary">Logout</button>
+        </div>
+    </div>
+    <a id="session-btn" th:href="@{/session-test(token=${token.value})}">
+        <h3>
+            move to session test url
+        </h3>
+    </a>
+</div>
+
+</body>
+<script type="text/javascript">
+    var tokenVal;
+    const $session_btn = document.getElementById('session-btn');
+    $.get("/user"+location.search, function (data) {
+        console.log(data);
+        $("#user").html(data.name);
+        $(".unauthenticated").hide();
+        $(".authenticated").show();
+    }).then((value)=>{
+        console.log(value);
+        tokenVal=value['name'];
+        /*
+        if($session_btn!=undefined)
+            $session_btn.href+=("?token="+tokenVal);
+
+         */
+    });
+
+    $.ajaxSetup({
+        beforeSend : function(xhr, settings) {
+            if (settings.type == 'POST' || settings.type == 'PUT'
+                || settings.type == 'DELETE') {
+                if (!(/^http:.*/.test(settings.url) || /^https:.*/
+                    .test(settings.url))) {
+                    // Only send the token to relative URLs i.e. locally.
+                    xhr.setRequestHeader("kth-token",
+                        tokenVal);
+                    if($session_btn!=undefined)
+                        settings.url+=location.search;
+                }
+            }
+        }
+    });
+
+</script>
+<script>
+
+    function moveSession(url){
+        fetch(url, {
+            method: 'get', // Default is 'get'
+            mode: 'cors',
+            headers: new Headers({
+                'kth-token' : tokenVal
+            })
+        });
+    }
+</script>
+
+<script type="text/javascript">
+    var logout = function() {
+        $.post("/logout", function() {
+            $("#user").html('');
+            $(".unauthenticated").show();
+            $(".authenticated").hide();
+        })
+        return true;
+    }
+</script>
+</html>
